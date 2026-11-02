@@ -2,34 +2,44 @@ import pygame
 
 pygame.init()
 
-screen = pygame.display.set_mode((640, 640))
+GAME_WIDTH = 640
+GAME_HEIGHT = 640
 
-player_img = pygame.image.load("player_image.png").convert()
+screen = pygame.display.set_mode((GAME_WIDTH, GAME_HEIGHT), pygame.RESIZABLE)
+pygame.display.set_caption("My Game")
 
-player_img = pygame.transform.scale(player_img,
-                                    (player_img.get_width() * 2,
-                                     player_img.get_height() * 2)) 
+cursor_img = pygame.image.load("assets/mouse_cursor.png").convert_alpha()
 
-player_img.set_colorkey((0, 0, 0))
+pygame.mouse.set_visible(False)
 
-running = True
-x = 0
+canvas = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
+
 clock = pygame.time.Clock()
 
-delta_time = 0.1
+running = True
 while running:
-    screen.fill((0, 0, 0))
-    screen.blit(player_img, (x, 30))
 
-    x += 50 * delta_time
-    
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    pygame.display.flip()
+    canvas.fill((255, 255, 255))
 
-    delta_time = clock.tick(60) / 1000
-    delta_time = max(0.001, min(0.1, delta_time))
+    # Whenever the screen updates we need to check the new window size in case of scaling.
+    # Also scaling the mouse inputs to our 640x640 space.
+    screenW, screenH = screen.get_size()
+    raw_mpos = pygame.mouse.get_pos()
+    mpos = (
+        int(raw_mpos[0] * (GAME_WIDTH / screenW)),
+        int(raw_mpos[1] * (GAME_HEIGHT / screenH))
+    )
+
+    
+    scaled_canvas = pygame.transform.scale(canvas, (screenW, screenH))
+    screen.blit(scaled_canvas, (0, 0))
+    screen.blit(cursor_img, raw_mpos)
+
+    pygame.display.flip()
+    clock.tick(60)
 
 pygame.quit()
