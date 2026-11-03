@@ -8,7 +8,7 @@ pygame.init()
 GAME_WIDTH = 640
 GAME_HEIGHT = 640
 
-screen = pygame.display.set_mode((GAME_WIDTH, GAME_HEIGHT), pygame.RESIZABLE)
+screen = pygame.display.set_mode((GAME_WIDTH, GAME_HEIGHT))
 pygame.display.set_caption("My Game")
 
 cursor_img = pygame.image.load("assets/mouse_cursor.png").convert_alpha()
