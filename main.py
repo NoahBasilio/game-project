@@ -6,6 +6,7 @@ import os
 
 from entities import Orb
 
+# Just a function so that PyInstaller doesn't end up becoming annoying
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -27,6 +28,7 @@ theme = input("Choose a theme (dark/light): ").lower()
 screen = pygame.display.set_mode((GAME_WIDTH, GAME_HEIGHT))
 pygame.display.set_caption("Avoid the Orbs!")
 
+# Set up cursor based on theming.
 if theme == "dark":
     cursor_img = pygame.image.load(resource_path("assets/mouse_cursor_light.png")).convert_alpha()
 elif theme == "light":
@@ -39,6 +41,13 @@ canvas = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 clock = pygame.time.Clock()
 
 font = pygame.font.Font(None, size=60)
+font2 = pygame.font.Font(None, size=30)
+
+# Buttons
+start_game_button = pygame.Rect(200, 300, 250, 60)
+quit_game_button = pygame.Rect(200, 400, 250, 60)
+
+
 
 mpos_list = []
 orbs = []
@@ -46,17 +55,9 @@ orbs = []
 game_state = "PLAYING"
 running = True
 
-game_state = "READY"
+game_state = "MENU"
 start_time = time.time()
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-    if theme == "dark":
-        canvas.fill((0, 0, 0))
-    elif theme == "light":
-        canvas.fill((255, 255, 255))
-
     # Whenever the screen updates we need to check the new window size in case of scaling.
     # Also scaling the mouse inputs to our 640x640 space.
     screenW, screenH = screen.get_size()
@@ -65,10 +66,54 @@ while running:
         int(raw_mpos[0] * (GAME_WIDTH / screenW)),
         int(raw_mpos[1] * (GAME_HEIGHT / screenH))
     )
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if game_state == "MENU":
+                if start_game_button.collidepoint(mpos):
+                    game_state = "READY"
+                    start_time = time.time()
+                elif quit_game_button.collidepoint(mpos):
+                    running = False
+                    sys.exit(0)
+
+        if event.type == pygame.KEYDOWN:
+            if game_state == "GAME OVER":
+                if event.key == pygame.K_SPACE:
+                    game_state = "READY"
+                    start_time = time.time()
+
+
+    if theme == "dark":
+        canvas.fill((0, 0, 0))
+    elif theme == "light":
+        canvas.fill((255, 255, 255))
+
     if len(mpos_list) == 10:
         mpos_list.pop(0)
     else:
         mpos_list.append([mpos[0], mpos[1]])
+
+    if game_state == "MENU":
+        if theme == "dark":
+            menu_text = font.render("Avoid the Orbs!", True, (255, 255, 255))
+            start_text = font.render("Start Game", True, (255, 255, 255))
+            quit_text = font.render("Quit Game", True, (255, 255, 255))
+        elif theme == "light":
+            menu_text = font.render("Avoid the Orbs!", True, (0, 0, 0))
+            start_text = font.render("Start Game", True, (255, 255, 255))
+            quit_text = font.render("Quit Game", True, (255, 255, 255))
+
+        pygame.draw.rect(canvas, (100, 100, 100), start_game_button)
+        pygame.draw.rect(canvas, (100, 100, 100), quit_game_button)
+        text_rect = menu_text.get_rect(center=(320, 200))
+        canvas.blit(menu_text, text_rect)
+
+        canvas.blit(start_text, start_text.get_rect(center=start_game_button.center))
+        canvas.blit(quit_text, quit_text.get_rect(center=quit_game_button.center))
 
     # In the first loop, give the player some time to get ready.
     # This was the biggest problem I saw while testing with friends 
@@ -93,12 +138,13 @@ while running:
             text_rect = text_surf.get_rect(center=(320, 320))
             canvas.blit(text_surf, text_rect)
 
+    if game_state != "MENU":
+        for i in range(len(mpos_list) - 1):
+            if theme == "dark":
+                pygame.draw.line(canvas, (255, 255, 255), mpos_list[i], mpos_list[i+1], 2)
+            elif theme == "light":
+                pygame.draw.line(canvas, (0, 0, 0), mpos_list[i], mpos_list[i+1], 2)
 
-    for i in range(len(mpos_list) - 1):
-        if theme == "dark":
-            pygame.draw.line(canvas, (255, 255, 255), mpos_list[i], mpos_list[i+1], 2)
-        elif theme == "light":
-            pygame.draw.line(canvas, (0, 0, 0), mpos_list[i], mpos_list[i+1], 2)
 
     if game_state == "PLAYING":
         if random.random() < 0.25:
@@ -114,10 +160,16 @@ while running:
     elif game_state == "GAME OVER":
         if theme == "dark":
             text = font.render("Game Over!", True, (255, 255, 255))
+            try_again = font2.render("(Press space to try again!)", True, (255, 255, 255))
         elif theme == "light":
             text = font.render("Game Over!", True, (0, 0, 0))
+            try_again = font2.render("(Press space to try again!)", True, (0, 0, 0))
+
+        text_rect2 = try_again.get_rect(center=(320, 355))
         text_rect = text.get_rect(center=(320, 320))
+        
         canvas.blit(text, text_rect)
+        canvas.blit(try_again, text_rect2)
 
     if game_state == "PLAYING":
         for orb in orbs:

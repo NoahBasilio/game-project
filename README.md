@@ -29,3 +29,7 @@ Orbs will spawn from the edges of the screen and drift toward the center. Use yo
 ### Running the Game
 
 python main.py
+
+### Issues
+
+If you find any issues, please open up a new issue on GitHub, and I will try my best to fix the problem as fast as I can. Thank you.
