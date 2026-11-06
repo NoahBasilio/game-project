@@ -30,6 +30,13 @@ Orbs will spawn from the edges of the screen and drift toward the center. Use yo
 
 python main.py
 
+### Credits
+
+Background Music is "RPG Battle Theme - The Last Encounter"
+(https://opengameart.org/content/rpg-battle-theme-the-last-encounter-0)
+
+Made by Matthew Pablo on OpenGameArt
+
 ### Issues
 
 If you find any issues, please open up a new issue on GitHub, and I will try my best to fix the problem as fast as I can. Thank you.
