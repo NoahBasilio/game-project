@@ -5,6 +5,7 @@ import sys
 import os
 
 from entities import Orb
+from pathlib import Path
 
 # Just a function so that PyInstaller doesn't end up becoming annoying
 def resource_path(relative_path):
@@ -18,8 +19,34 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+def get_save_path(filename):
+    save_dir = Path.home() / ".avoid_the_orbs"
 
+    save_dir.mkdir(exist_ok=True)
+
+    return os.path.join(save_dir, filename)
+
+def load_high_score():
+    if os.path.exists(HIGHSCORE_FILE):
+        try:
+            with open(HIGHSCORE_FILE, "r") as file:
+                return int(file.read().strip())
+        except ValueError:
+            return 0
+    return 0
+
+def save_high_score(score):
+    try:
+        with open(HIGHSCORE_FILE, "w") as file:
+            file.write(str(score))
+    except Exception as e:
+        return 0
+
+
+HIGHSCORE_FILE = get_save_path("highscore.txt")
+high_score = load_high_score()
 pygame.init()
+pygame.mixer.init()
 
 GAME_WIDTH = 640
 GAME_HEIGHT = 640
@@ -36,12 +63,18 @@ elif theme == "light":
 
 pygame.mouse.set_visible(False)
 
+# Background music
+pygame.mixer.music.load(resource_path("assets/The Last Encounter Medium Loop.wav"))
+pygame.mixer.music.set_volume(0.3)
+
 canvas = pygame.Surface((GAME_WIDTH, GAME_HEIGHT))
 
 clock = pygame.time.Clock()
 
+# Text types
 font = pygame.font.Font(None, size=60)
 font2 = pygame.font.Font(None, size=30)
+score_font = pygame.font.Font(None, size=36)
 
 # Buttons
 start_game_button = pygame.Rect(200, 300, 250, 60)
@@ -51,6 +84,9 @@ quit_game_button = pygame.Rect(200, 400, 250, 60)
 
 mpos_list = []
 orbs = []
+
+current_score = 0
+game_start_time = 0
 
 game_state = "PLAYING"
 running = True
@@ -85,6 +121,7 @@ while running:
                 if event.key == pygame.K_SPACE:
                     game_state = "READY"
                     start_time = time.time()
+                    current_score = 0
 
 
     if theme == "dark":
@@ -133,6 +170,8 @@ while running:
         else:
             game_state = "PLAYING"
             text_surf = None
+            game_start_time = time.time()
+            pygame.mixer.music.play(-1)
 
         if text_surf:
             text_rect = text_surf.get_rect(center=(320, 320))
@@ -147,6 +186,8 @@ while running:
 
 
     if game_state == "PLAYING":
+        current_score = int((time.time() - game_start_time) * 100)
+
         if random.random() < 0.25:
             edge = random.randint(1, 4)
             if edge == 1:
@@ -157,19 +198,25 @@ while running:
                 orbs.append(Orb(0, random.randint(0, 640)))
             else:
                 orbs.append(Orb(640, random.randint(0, 640)))
+
+
     elif game_state == "GAME OVER":
         if theme == "dark":
             text = font.render("Game Over!", True, (255, 255, 255))
+            score_summary = score_font.render(f"Score: {current_score} | High Score: {high_score}", True, score_color)
             try_again = font2.render("(Press space to try again!)", True, (255, 255, 255))
         elif theme == "light":
             text = font.render("Game Over!", True, (0, 0, 0))
+            score_summary = score_font.render(f"Score: {current_score} | High Score: {high_score}", True, score_color)
             try_again = font2.render("(Press space to try again!)", True, (0, 0, 0))
 
         text_rect2 = try_again.get_rect(center=(320, 355))
         text_rect = text.get_rect(center=(320, 320))
+        score_rect = score_summary.get_rect(center=(180,20))
         
         canvas.blit(text, text_rect)
         canvas.blit(try_again, text_rect2)
+        canvas.blit(score_summary, score_rect)
 
     if game_state == "PLAYING":
         for orb in orbs:
@@ -177,7 +224,21 @@ while running:
             if orb.check_collision(mpos):
                 game_state = "GAME OVER"
                 orbs.clear()
+                pygame.mixer.music.stop()
+
+                if current_score > high_score:
+                    high_score = current_score
+                    save_high_score(high_score)
+
             orb.draw(canvas)
+
+        if theme == "dark":
+            score_color = (255, 255, 255)
+        else:
+            score_color = (0, 0, 0)
+
+        score_surf = score_font.render(f"Score: {current_score}", True, score_color)
+        canvas.blit(score_surf, (15, 15))
     
     scaled_canvas = pygame.transform.scale(canvas, (screenW, screenH))
     screen.blit(scaled_canvas, (0, 0))
